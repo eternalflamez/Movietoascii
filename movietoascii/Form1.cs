@@ -10,6 +10,7 @@ using AForge;
 using AForge.Video.FFMPEG;
 using System.Drawing.Drawing2D;
 using System.IO;
+using System.Threading;
 
 namespace movietoascii
 {
@@ -21,6 +22,7 @@ namespace movietoascii
         VideoFileWriter writer = new VideoFileWriter();
         int frameNumber;
         bool inColor = false;
+        Thread convertThread;
 
         public ASCIIConverter()
         {
@@ -128,7 +130,9 @@ namespace movietoascii
             // Save time to compare for speed.
             DateTime start = DateTime.Now;
             // Recursion woo
-            Convert(start);
+            //New thread
+            convertThread = new Thread(() => Convert(start));
+            convertThread.Start();
 
             button1.Enabled = true;
             btConvert.Enabled = true;
@@ -222,8 +226,13 @@ namespace movietoascii
             }
 
             frameNumber++;
-            
             Convert(start);
+        }
+
+        private void ASCIIConverter_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            //Close thread on formclosing
+            convertThread.Abort();
         }
     }
 }
