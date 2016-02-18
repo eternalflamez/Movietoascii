@@ -20,6 +20,7 @@ namespace movietoascii
         Font font;
         VideoFileWriter writer = new VideoFileWriter();
         int frameNumber;
+        bool inColor = false;
 
         public ASCIIConverter()
         {
@@ -115,6 +116,15 @@ namespace movietoascii
             button1.Enabled = false;
             btConvert.Enabled = false;
 
+            if (checkBox1.Checked == true)
+            {
+                inColor = true;
+            }
+            else
+            {
+                inColor = false;
+            }
+
             // Save time to compare for speed.
             DateTime start = DateTime.Now;
             // Recursion woo
@@ -160,7 +170,10 @@ namespace movietoascii
                         {
                             int result = 0;
 
+                            // Get brightness and color for generating to ASCII
+
                             decimal fb = (decimal)bm.GetPixel(w, h).GetBrightness();
+                            SolidBrush brush = new SolidBrush(Color.FromArgb(bm.GetPixel(w, h).ToArgb()));
 
                             decimal distance = decimal.MaxValue;
                             decimal previousDistance = distance;
@@ -187,7 +200,15 @@ namespace movietoascii
 
                             // Draw character
                             RectangleF rectf = new RectangleF(w, h, 6, 6);
-                            g.DrawString(characterList[result].ToString(), font, Brushes.Green, rectf);
+
+                            if (inColor == true)
+                            {
+                                g.DrawString(characterList[result].ToString(), font, brush, rectf);
+                            }
+                            else
+                            {
+                                g.DrawString(characterList[result].ToString(), font, new SolidBrush(Color.Green), rectf);
+                            }
                         }
                     }
 
@@ -196,7 +217,7 @@ namespace movietoascii
                     // Save frame.
                     bmp.Save("new/" + string.Format("{0:0000}", frameNumber) + ".bmp", System.Drawing.Imaging.ImageFormat.Bmp);
                     // TODO: Split video up in fragments
-                    writer.WriteVideoFrame(bmp);
+                    //writer.WriteVideoFrame(bmp); GEEFT EEN ERROR
                 }
             }
 
