@@ -116,7 +116,7 @@ namespace movietoascii
             int frameCount = (int)reader.FrameCount;
             reader.Close();
             // Recursion woo
-            Convert(1133, start, frameCount);
+            Convert(0, start, frameCount);
 
             button1.Enabled = true;
             btConvert.Enabled = true;
