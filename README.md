@@ -7,4 +7,4 @@ Click step 2, which will transform the frames into ascii, and makes a low qualit
 
 Known issues:
 - No file picker for step 1
-- Application hang on step 2
+- Application hang on step 2 (fixed, work in progess)
