@@ -9,9 +9,8 @@
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
-
+.localhistory/
 # Build results
-[Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
@@ -19,7 +18,6 @@ x64/
 x86/
 build/
 bld/
-[Bb]in/
 [Oo]bj/
 
 # Visual Studio 2015 cache/options directory
@@ -68,6 +66,8 @@ artifacts/
 *.pidb
 *.svclog
 *.scc
+*.mp4
+*.bmp
 
 # Chutzpah Test files
 _Chutzpah*
