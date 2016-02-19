@@ -16,8 +16,7 @@ namespace movietoascii
 {
     public partial class ASCIIConverter : Form
     {
-        List<decimal> characterBrightnessList;
-        List<string> characterList;
+        List<Symbol> symbolList;
         Font font;
         VideoFileWriter writer = new VideoFileWriter();
         int frameNumber;
@@ -40,55 +39,66 @@ namespace movietoascii
             font = new Font("Arial", 6f);
 
             textBox1.Text = "";
-            for (int i = 33; i < 255; i++)
+            for (int i = 65; i < 255; i++)
             {
                 textBox1.Text += " " + (char)i;
             }
 
             string[] asciiArray = textBox1.Text.ToString().Split(" ".ToCharArray());
+            symbolList = new List<Symbol>();
 
             for (int i = 0; i < asciiArray.Length; i++)
             {
                 //string naar bitmap;
-                using (Bitmap bmp = new Bitmap(6, 6))
-                {
-                    Graphics g = Graphics.FromImage(bmp);
-                    string randomString = asciiArray[i];
-                    Font myFont = new Font("Arial", 5.5f);
-                    PointF rect = new PointF(0, 0);
-                    g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-                    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                    g.DrawString(randomString, myFont, new SolidBrush(Color.White), rect);
+                Bitmap bmp = new Bitmap(6, 6);
+                Graphics g = Graphics.FromImage(bmp);
+                string randomString = asciiArray[i];
+                Font myFont = new Font("Arial", 5.5f);
+                PointF rect = new PointF(0, 0);
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                g.DrawString(randomString, myFont, new SolidBrush(Color.White), rect);
 
-                    decimal tb = 0;
-                    for (int w = 0; w < 6; w++)
+                decimal tb = 0;
+                for (int w = 0; w < 6; w++)
+                {
+                    for (int h = 0; h < 6; h++)
                     {
-                        for (int h = 0; h < 6; h++)
+                        decimal br = (decimal)bmp.GetPixel(w, h).GetBrightness();
+                        tb += br;
+
+                        if(br != 0)
                         {
-                            tb += (decimal)bmp.GetPixel(w, h).GetBrightness();
+                            bmp.SetPixel(w, h, Color.Green);
                         }
                     }
+                }
 
-                    decimal er = tb / 36;
-                    listBox1.Items.Add(asciiArray[i] + " " + er);
+                decimal brightness = tb / 36;
+                string character = asciiArray[i];
+
+                Symbol s = new Symbol(brightness, character, bmp);
+                symbolList.Add(s);
+
+                listBox1.Items.Add(asciiArray[i] + " " + brightness);
+            }
+            
+            symbolList = BubbleSort.Sort(symbolList);
+            
+            decimal previousValue = -1;
+            for (int i = 0; i < symbolList.Count; i++)
+            {
+                if (symbolList[i].Brightness == previousValue)
+                {
+                    symbolList.RemoveAt(i);
+                    i--;
+                }
+                else
+                {
+                    previousValue = symbolList[i].Brightness;
                 }
             }
-
-            List<decimal> lis = new List<decimal>();
-            List<string> pis = new List<string>();
-
-            for (int t = 0; t < listBox1.Items.Count; t++)
-            {
-                lis.Add(decimal.Parse(listBox1.Items[t].ToString().Split(" ".ToCharArray())[1]));
-                pis.Add(listBox1.Items[t].ToString().Split(" ".ToCharArray())[0]);
-            }
-
-            characterBrightnessList = lis;
-            characterList = pis;
-
-            characterBrightnessList = BubbleSort.Sort(characterBrightnessList, characterList);
-            characterList = BubbleSort.GetSortedSecondaryList();
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -178,15 +188,14 @@ namespace movietoascii
                             // Get brightness and color for generating to ASCII
 
                             decimal fb = (decimal)bm.GetPixel(w, h).GetBrightness();
-                            SolidBrush brush = new SolidBrush(Color.FromArgb(bm.GetPixel(w, h).ToArgb()));
-
+                            
                             decimal distance = decimal.MaxValue;
                             decimal previousDistance = distance;
 
                             // Determine which character to use
-                            for (int b = 0; b < characterBrightnessList.Count; b++)
+                            for (int b = 0; b < symbolList.Count; b++)
                             {
-                                decimal currentDistance = Math.Abs(characterBrightnessList[b] - fb);
+                                decimal currentDistance = Math.Abs(symbolList[b].Brightness - fb);
 
                                 if (currentDistance > previousDistance)
                                 {
@@ -202,17 +211,20 @@ namespace movietoascii
                                     result = b;
                                 }
                             }
-
-                            // Draw character
-                            RectangleF rectf = new RectangleF(w, h, 6, 6);
-
+                            
                             if (inColor == true)
                             {
-                                g.DrawString(characterList[result].ToString(), font, brush, rectf);
+                                SolidBrush brush = new SolidBrush(bm.GetPixel(w, h));
+                                RectangleF rectf = new RectangleF(w, h, 6, 6);
+                                g.DrawString(symbolList[result].Character.ToString(), font, brush, rectf);
+
+                                // TODO: Faster recoloring?! DrawImage is 30x faster but changecolor is super slow.
+                                // Image tempImage = ChangeColorOfImage(bm.GetPixel(w, h), symbolList[result].Image);
+                                // g.DrawImage(tempImage, new PointF(w, h));
                             }
                             else
                             {
-                                g.DrawString(characterList[result].ToString(), font, new SolidBrush(Color.Green), rectf);
+                                g.DrawImage(symbolList[result].Image, new PointF(w, h));
                             }
                         }
                     }
@@ -220,7 +232,7 @@ namespace movietoascii
                     g.Dispose();
 
                     // Save frame.
-                     bmp.Save("new/" + string.Format("{0:0000}", frameNumber) + ".bmp", System.Drawing.Imaging.ImageFormat.Bmp);
+                    bmp.Save("new/" + string.Format("{0:0000}", frameNumber) + ".bmp", System.Drawing.Imaging.ImageFormat.Bmp);
                     // TODO: Split video up in fragments
                     writer.WriteVideoFrame(bmp);// Errors when using a non full hd bmp
                     Console.WriteLine(frameNumber);
@@ -236,7 +248,28 @@ namespace movietoascii
         private void ASCIIConverter_FormClosing(object sender, FormClosingEventArgs e)
         {
             //Close thread on formclosing
-            convertThread.Abort();
+            if (convertThread != null)
+            {
+                convertThread.Abort();
+            }
+        }
+
+        private Image ChangeColorOfImage(Color color, Image image)
+        {
+            Bitmap bmp = new Bitmap(image);
+
+            for (int i = 0; i < image.Width; i++)
+            {
+                for (int j = 0; j < image.Height; j++)
+                {
+                    if (bmp.GetPixel(i, j).A >= 150)
+                    {
+                        bmp.SetPixel(i, j, color);
+                    }
+                }
+            }
+
+            return (Image) bmp;
         }
     }
 }

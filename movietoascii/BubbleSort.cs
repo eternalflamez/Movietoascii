@@ -10,9 +10,7 @@ namespace movietoascii
         /// <summary>
         /// An unsorted array of integers
         /// </summary>
-        private static List<decimal> sorted;
-
-        private static List<string> sortedSecondary;
+        private static List<Symbol> sorted;
 
         /// <summary>
         /// Indicates whether or not the array was changed since the last iteration
@@ -23,16 +21,10 @@ namespace movietoascii
         /// The highest point to iterate to
         /// </summary>
         private static int maxPoint;
-
-        public static List<string> GetSortedSecondaryList()
-        {
-            return sortedSecondary;
-        }
-
-        public static List<decimal> Sort(List<decimal> unsorted, List<string> unsortedSecondary)
+        
+        public static List<Symbol> Sort(List<Symbol> unsorted)
         {
             sorted = unsorted;
-            sortedSecondary = unsortedSecondary;
             maxPoint = sorted.Count;
 
             int index = 0;
@@ -53,16 +45,12 @@ namespace movietoascii
         {
             if (index + 1 != maxPoint)
             {
-                if (sorted[index] > sorted[index + 1])
+                if (sorted[index].Brightness > sorted[index + 1].Brightness)
                 {
-                    decimal first = sorted[index];
+                    Symbol first = sorted[index];
                     sorted[index] = sorted[index + 1];
                     sorted[index + 1] = first;
-
-                    string firstString = sortedSecondary[index];
-                    sortedSecondary[index] = sortedSecondary[index + 1];
-                    sortedSecondary[index + 1] = firstString;
-
+                    
                     changed = true;
                 }
 
