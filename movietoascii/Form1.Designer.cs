@@ -36,6 +36,7 @@
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.listBox1 = new System.Windows.Forms.ListBox();
             this.checkBox1 = new System.Windows.Forms.CheckBox();
+            this.progressBar2 = new System.Windows.Forms.ProgressBar();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -50,9 +51,9 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(406, 732);
+            this.button1.Location = new System.Drawing.Point(8, 761);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.Size = new System.Drawing.Size(392, 23);
             this.button1.TabIndex = 1;
             this.button1.Text = "part 1";
             this.button1.UseVisualStyleBackColor = true;
@@ -67,9 +68,9 @@
             // 
             // btConvert
             // 
-            this.btConvert.Location = new System.Drawing.Point(8, 761);
+            this.btConvert.Location = new System.Drawing.Point(8, 819);
             this.btConvert.Name = "btConvert";
-            this.btConvert.Size = new System.Drawing.Size(473, 23);
+            this.btConvert.Size = new System.Drawing.Size(392, 23);
             this.btConvert.TabIndex = 3;
             this.btConvert.Text = "part 2";
             this.btConvert.UseVisualStyleBackColor = true;
@@ -106,18 +107,27 @@
             this.checkBox1.AutoSize = true;
             this.checkBox1.Checked = true;
             this.checkBox1.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBox1.Location = new System.Drawing.Point(401, 790);
+            this.checkBox1.Location = new System.Drawing.Point(525, 736);
             this.checkBox1.Name = "checkBox1";
             this.checkBox1.Size = new System.Drawing.Size(76, 17);
             this.checkBox1.TabIndex = 8;
             this.checkBox1.Text = "Ik wil kleur";
             this.checkBox1.UseVisualStyleBackColor = true;
             // 
+            // progressBar2
+            // 
+            this.progressBar2.Location = new System.Drawing.Point(8, 790);
+            this.progressBar2.Maximum = 1440;
+            this.progressBar2.Name = "progressBar2";
+            this.progressBar2.Size = new System.Drawing.Size(392, 23);
+            this.progressBar2.TabIndex = 9;
+            // 
             // ASCIIConverter
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1676, 1023);
+            this.Controls.Add(this.progressBar2);
             this.Controls.Add(this.checkBox1);
             this.Controls.Add(this.listBox1);
             this.Controls.Add(this.textBox1);
@@ -129,6 +139,7 @@
             this.Name = "ASCIIConverter";
             this.Text = "Form1";
             this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ASCIIConverter_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.ResumeLayout(false);
@@ -146,6 +157,7 @@
         private System.Windows.Forms.TextBox textBox1;
         private System.Windows.Forms.ListBox listBox1;
         private System.Windows.Forms.CheckBox checkBox1;
+        private System.Windows.Forms.ProgressBar progressBar2;
     }
 }
 

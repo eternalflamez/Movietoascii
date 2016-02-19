@@ -24,6 +24,7 @@ namespace movietoascii
         bool inColor = false;
         DateTime start;
         int frameCount = 0;
+        Thread convertThread;
 
         public ASCIIConverter()
         {
@@ -132,6 +133,7 @@ namespace movietoascii
             frameCount = Directory.GetFiles("Frames\\").Length - 2;
             Thread conversionThread = new Thread(new ThreadStart(Convert));
             conversionThread.Start();
+            // Recursion woo
         }
 
         private VideoFileReader GetReader()
@@ -220,7 +222,7 @@ namespace movietoascii
                     // Save frame.
                      bmp.Save("new/" + string.Format("{0:0000}", frameNumber) + ".bmp", System.Drawing.Imaging.ImageFormat.Bmp);
                     // TODO: Split video up in fragments
-                    writer.WriteVideoFrame(bmp);// GEEFT EEN ERROR
+                    // writer.WriteVideoFrame(bmp);// Errors when using a non full hd bmp
                     Console.WriteLine(frameNumber);
                 }
             }
@@ -229,6 +231,12 @@ namespace movietoascii
             progressBar1.Invoke(((Action)(() => progressBar1.Value = (int)(((float)frameNumber / (float)frameCount) * 100))));
             
             Convert();
+        }
+
+        private void ASCIIConverter_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            //Close thread on formclosing
+            convertThread.Abort();
         }
     }
 }
