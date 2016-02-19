@@ -225,7 +225,7 @@ namespace movietoascii
                     // Save frame.
                      bmp.Save("new/" + string.Format("{0:0000}", frameNumber) + ".bmp", System.Drawing.Imaging.ImageFormat.Bmp);
                     // TODO: Split video up in fragments
-                    writer.WriteVideoFrame(bmp);// Errors when using a non full hd bmp
+                    writer.WriteVideoFrame(bmp);
                     Console.WriteLine(frameNumber);
                 }
             }
