@@ -10,6 +10,7 @@ using AForge;
 using AForge.Video.FFMPEG;
 using System.Drawing.Drawing2D;
 using System.IO;
+using System.Threading;
 
 namespace movietoascii
 {
@@ -21,6 +22,8 @@ namespace movietoascii
         VideoFileWriter writer = new VideoFileWriter();
         int frameNumber;
         bool inColor = false;
+        DateTime start;
+        int frameCount = 0;
 
         public ASCIIConverter()
         {
@@ -30,7 +33,7 @@ namespace movietoascii
         private void Form1_Load(object sender, EventArgs e)
         {
             frameNumber = 0;
-            writer.Open("new/video.mp4", 1920, 1080, 24, VideoCodec.MPEG4);
+            writer.Open("new/video.mp4", 1920, 1080, 24, VideoCodec.MPEG4, 8000000);
 
             listBox1.Items.Clear();
             font = new Font("Arial", 6f);
@@ -99,7 +102,6 @@ namespace movietoascii
             {
                 Bitmap videoFrame = reader.ReadVideoFrame();
                 videoFrame.Save("Frames/" + i + ".bmp");
-                progressBar1.Value += 1;
                 videoFrame.Dispose();
 
                 progressBar1.Value = (int) (((float)i / (float)reader.FrameCount) * 100);
@@ -126,12 +128,10 @@ namespace movietoascii
             }
 
             // Save time to compare for speed.
-            DateTime start = DateTime.Now;
-            // Recursion woo
-            Convert(start);
-
-            button1.Enabled = true;
-            btConvert.Enabled = true;
+            start = DateTime.Now;
+            frameCount = Directory.GetFiles("Frames\\").Length - 2;
+            Thread conversionThread = new Thread(new ThreadStart(Convert));
+            conversionThread.Start();
         }
 
         private VideoFileReader GetReader()
@@ -142,7 +142,7 @@ namespace movietoascii
             return reader;
         }
 
-        private void Convert(DateTime start)
+        private void Convert()
         {
             // If next file doesn't exist.
             if(!File.Exists(@"Frames\" + frameNumber + ".bmp"))
@@ -151,6 +151,9 @@ namespace movietoascii
                 TimeSpan duration = DateTime.Now - start;
                 Console.WriteLine("Einde datastroom: frame " + frameNumber + ", totale tijd: " + duration.TotalMilliseconds);
                 writer.Close();
+
+                button1.Invoke(((Action)(() => button1.Enabled = true)));
+                btConvert.Invoke(((Action)(() => btConvert.Enabled = true)));
                 return;
             }
             
@@ -215,15 +218,17 @@ namespace movietoascii
                     g.Dispose();
 
                     // Save frame.
-                    bmp.Save("new/" + string.Format("{0:0000}", frameNumber) + ".bmp", System.Drawing.Imaging.ImageFormat.Bmp);
+                     bmp.Save("new/" + string.Format("{0:0000}", frameNumber) + ".bmp", System.Drawing.Imaging.ImageFormat.Bmp);
                     // TODO: Split video up in fragments
-                    //writer.WriteVideoFrame(bmp); GEEFT EEN ERROR
+                    writer.WriteVideoFrame(bmp);// GEEFT EEN ERROR
+                    Console.WriteLine(frameNumber);
                 }
             }
 
             frameNumber++;
+            progressBar1.Invoke(((Action)(() => progressBar1.Value = (int)(((float)frameNumber / (float)frameCount) * 100))));
             
-            Convert(start);
+            Convert();
         }
     }
 }
