@@ -33,19 +33,64 @@ namespace movietoascii
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            frameNumber = 0;
-            writer.Open("new/video.mp4", 1920, 1080, 24, VideoCodec.MPEG4, 8000000);
+            scanCharacters();
+        }
 
-            listBox1.Items.Clear();
-            font = new Font("Arial", 6f);
+        private void button1_Click(object sender, EventArgs e)
+        {
+            btGetFrames.Enabled = false;
+            btConvert.Enabled = false;
 
-            textBox1.Text = "";
-            for (int i = 33; i < 255; i++)
+            progressBar1.Value = 0;
+
+            VideoFileReader reader = GetReader();
+            for (int i = 0; i < reader.FrameCount; i++)
             {
-                textBox1.Text += " " + (char)i;
+                Bitmap videoFrame = reader.ReadVideoFrame();
+                videoFrame.Save("Frames/" + i + ".bmp");
+                videoFrame.Dispose();
+
+                progressBar1.Value = (int) (((float)i / (float)reader.FrameCount) * 100);
+            }
+            reader.Close();
+
+            btGetFrames.Enabled = true;
+            btConvert.Enabled = true;
+        }
+
+
+        private void btConvertClick(object sender, EventArgs e)
+        {
+            Bitmap resolutionBitmap = new Bitmap("Frames/0.bmp");
+            writer.Open("new/video.mp4", resolutionBitmap.Width, resolutionBitmap.Height, 24, VideoCodec.MPEG4, 8000000);
+            btGetFrames.Enabled = false;
+            btConvert.Enabled = false;
+            btAsciiCharacters.Enabled = false;
+            txCharacters.Enabled = false;
+
+            if (chInColor.Checked == true)
+            {
+                inColor = true;
+            }
+            else
+            {
+                inColor = false;
             }
 
-            string[] asciiArray = textBox1.Text.ToString().Split(" ".ToCharArray());
+            // Save time to compare for speed.
+            start = DateTime.Now;
+            frameCount = Directory.GetFiles("Frames\\").Length - 2;
+            convertThread = new Thread(new ThreadStart(Convert));
+            convertThread.Start();
+            // Recursion woo
+        }
+
+        private void scanCharacters ()
+        {
+            listBox1.Items.Clear();
+            frameNumber = 0;
+            font = new Font("Arial", 5f);
+            string[] asciiArray = txCharacters.Text.ToString().Split(" ".ToCharArray());
 
             for (int i = 0; i < asciiArray.Length; i++)
             {
@@ -91,51 +136,6 @@ namespace movietoascii
             characterList = BubbleSort.GetSortedSecondaryList();
         }
 
-        private void button1_Click(object sender, EventArgs e)
-        {
-            button1.Enabled = false;
-            btConvert.Enabled = false;
-
-            progressBar1.Value = 0;
-
-            VideoFileReader reader = GetReader();
-            for (int i = 0; i < reader.FrameCount; i++)
-            {
-                Bitmap videoFrame = reader.ReadVideoFrame();
-                videoFrame.Save("Frames/" + i + ".bmp");
-                videoFrame.Dispose();
-
-                progressBar1.Value = (int) (((float)i / (float)reader.FrameCount) * 100);
-            }
-            reader.Close();
-
-            button1.Enabled = true;
-            btConvert.Enabled = true;
-        }
-
-
-        private void btConvertClick(object sender, EventArgs e)
-        {
-            button1.Enabled = false;
-            btConvert.Enabled = false;
-
-            if (checkBox1.Checked == true)
-            {
-                inColor = true;
-            }
-            else
-            {
-                inColor = false;
-            }
-
-            // Save time to compare for speed.
-            start = DateTime.Now;
-            frameCount = Directory.GetFiles("Frames\\").Length - 2;
-            convertThread = new Thread(new ThreadStart(Convert));
-            convertThread.Start();
-            // Recursion woo
-        }
-
         private VideoFileReader GetReader()
         {
             VideoFileReader reader = new VideoFileReader();
@@ -154,8 +154,11 @@ namespace movietoascii
                 Console.WriteLine("Einde datastroom: frame " + frameNumber + ", totale tijd: " + duration.TotalMilliseconds);
                 writer.Close();
 
-                button1.Invoke(((Action)(() => button1.Enabled = true)));
+                btGetFrames.Invoke(((Action)(() => btGetFrames.Enabled = true)));
                 btConvert.Invoke(((Action)(() => btConvert.Enabled = true)));
+                btAsciiCharacters.Invoke(((Action)(() => btAsciiCharacters.Enabled = true)));
+                txCharacters.Invoke(((Action)(() => txCharacters.Enabled = true)));
+                progressBar2.Invoke(((Action)(() => progressBar2.Value = 0)));
                 return;
             }
             
@@ -236,7 +239,32 @@ namespace movietoascii
         private void ASCIIConverter_FormClosing(object sender, FormClosingEventArgs e)
         {
             //Close thread on formclosing
-            convertThread.Abort();
+            try
+            {
+                convertThread.Abort();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine();
+                Console.Write("Error: " + ex);
+            }
+            
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            listBox1.Items.Clear();
+            txCharacters.Text = "";
+            for (int i = 33; i < 255; i++)
+            {
+                txCharacters.Text += " " + (char)i;
+            }
+            scanCharacters();
+        }
+
+        private void btUpdateCharacters_Click(object sender, EventArgs e)
+        {
+            scanCharacters();
         }
     }
 }
