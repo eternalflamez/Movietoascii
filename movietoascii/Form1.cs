@@ -222,13 +222,13 @@ namespace movietoascii
                     // Save frame.
                      bmp.Save("new/" + string.Format("{0:0000}", frameNumber) + ".bmp", System.Drawing.Imaging.ImageFormat.Bmp);
                     // TODO: Split video up in fragments
-                    // writer.WriteVideoFrame(bmp);// Errors when using a non full hd bmp
+                    writer.WriteVideoFrame(bmp);// Errors when using a non full hd bmp
                     Console.WriteLine(frameNumber);
                 }
             }
 
             frameNumber++;
-            progressBar1.Invoke(((Action)(() => progressBar1.Value = (int)(((float)frameNumber / (float)frameCount) * 100))));
+            progressBar2.Invoke(((Action)(() => progressBar2.Value = (int)(((float)frameNumber / (float)frameCount) * 100))));
             
             Convert();
         }
