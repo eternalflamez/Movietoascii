@@ -131,8 +131,8 @@ namespace movietoascii
             // Save time to compare for speed.
             start = DateTime.Now;
             frameCount = Directory.GetFiles("Frames\\").Length - 2;
-            Thread conversionThread = new Thread(new ThreadStart(Convert));
-            conversionThread.Start();
+            convertThread = new Thread(new ThreadStart(Convert));
+            convertThread.Start();
             // Recursion woo
         }
 
