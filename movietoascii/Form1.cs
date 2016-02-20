@@ -226,12 +226,12 @@ namespace movietoascii
                             }
                             else
                             {
-                                RectangleF rectf = new RectangleF(w, h, symbolSize, symbolSize);
-                                g.DrawString(symbolList[result].Character, font, Brushes.Green, rectf);
+                                // RectangleF rectf = new RectangleF(w, h, symbolSize, symbolSize);
+                                // g.DrawString(symbolList[result].Character, font, Brushes.Green, rectf);
 
-                                // TODO: Need to fix lower quality resolutions
+                                // TODO: Need to fix lower quality images
                                 // For reference, see http://puu.sh/nei71/3477430c3c.png (strings) vs http://puu.sh/nei7R/4d6c1cb263.png (cached image of string)
-                                // g.DrawImage(symbolList[result].Image, w, h);
+                                g.DrawImage(symbolList[result].Image, w, h);
                             }
                         }
                     }
