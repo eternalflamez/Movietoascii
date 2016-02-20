@@ -24,6 +24,7 @@ namespace movietoascii
         DateTime start;
         int frameCount = 0;
         Thread convertThread;
+        int symbolSize = 6;
 
         public ASCIIConverter()
         {
@@ -32,80 +33,14 @@ namespace movietoascii
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            frameNumber = 0;
-            writer.Open("new/video.mp4", 1920, 1080, 24, VideoCodec.MPEG4, 8000000);
-
-            listBox1.Items.Clear();
-            font = new Font("Arial", 6f);
-
-            textBox1.Text = "";
-            for (int i = 65; i < 255; i++)
-            {
-                textBox1.Text += " " + (char)i;
-            }
-
-            string[] asciiArray = textBox1.Text.ToString().Split(" ".ToCharArray());
-            symbolList = new List<Symbol>();
-
-            for (int i = 0; i < asciiArray.Length; i++)
-            {
-                //string naar bitmap;
-                Bitmap bmp = new Bitmap(6, 6);
-                Graphics g = Graphics.FromImage(bmp);
-                string randomString = asciiArray[i];
-                Font myFont = new Font("Arial", 5.5f);
-                PointF rect = new PointF(0, 0);
-                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                g.DrawString(randomString, myFont, new SolidBrush(Color.White), rect);
-
-                decimal tb = 0;
-                for (int w = 0; w < 6; w++)
-                {
-                    for (int h = 0; h < 6; h++)
-                    {
-                        decimal br = (decimal)bmp.GetPixel(w, h).GetBrightness();
-                        tb += br;
-
-                        if(br != 0)
-                        {
-                            bmp.SetPixel(w, h, Color.Green);
-                        }
-                    }
-                }
-
-                decimal brightness = tb / 36;
-                string character = asciiArray[i];
-
-                Symbol s = new Symbol(brightness, character, bmp);
-                symbolList.Add(s);
-
-                listBox1.Items.Add(asciiArray[i] + " " + brightness);
-            }
-            
-            symbolList = BubbleSort.Sort(symbolList);
-            
-            decimal previousValue = -1;
-            for (int i = 0; i < symbolList.Count; i++)
-            {
-                if (symbolList[i].Brightness == previousValue)
-                {
-                    symbolList.RemoveAt(i);
-                    i--;
-                }
-                else
-                {
-                    previousValue = symbolList[i].Brightness;
-                }
-            }
+            scanCharacters();
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-            button1.Enabled = false;
+            btGetFrames.Enabled = false;
             btConvert.Enabled = false;
-
+            
             progressBar1.Value = 0;
 
             VideoFileReader reader = GetReader();
@@ -119,17 +54,21 @@ namespace movietoascii
             }
             reader.Close();
 
-            button1.Enabled = true;
+            btGetFrames.Enabled = true;
             btConvert.Enabled = true;
         }
 
 
         private void btConvertClick(object sender, EventArgs e)
         {
-            button1.Enabled = false;
+            Bitmap resolutionBitmap = new Bitmap("Frames/0.bmp");
+            writer.Open("new/video.mp4", resolutionBitmap.Width, resolutionBitmap.Height, 24, VideoCodec.MPEG4, 8000000);
+            btGetFrames.Enabled = false;
             btConvert.Enabled = false;
+            btAsciiCharacters.Enabled = false;
+            txCharacters.Enabled = false;
 
-            if (checkBox1.Checked == true)
+            if (chInColor.Checked == true)
             {
                 inColor = true;
             }
@@ -143,7 +82,65 @@ namespace movietoascii
             frameCount = Directory.GetFiles("Frames\\").Length - 2;
             convertThread = new Thread(new ThreadStart(Convert));
             convertThread.Start();
-            // Recursion woo
+        }
+
+        private void scanCharacters ()
+        {
+            listBox1.Items.Clear();
+            frameNumber = 0;
+            font = new Font("Arial", symbolSize - .5f);
+            string[] asciiArray = txCharacters.Text.ToString().Split(" ".ToCharArray());
+            symbolList = new List<Symbol>();
+
+            for (int i = 0; i < asciiArray.Length; i++)
+            {
+                //string naar bitmap;
+                Bitmap bmp = new Bitmap(symbolSize, symbolSize);
+                Graphics g = Graphics.FromImage(bmp);
+                string asciiCharacter = asciiArray[i];
+
+                g.CompositingMode = CompositingMode.SourceCopy;
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                g.DrawString(asciiCharacter, font, new SolidBrush(Color.Green), 0, 0);
+
+                decimal tb = 0;
+                for (int w = 0; w < bmp.Width; w++)
+                {
+                    for (int h = 0; h < bmp.Height; h++)
+                    {
+                        decimal br = (decimal)bmp.GetPixel(w, h).GetBrightness();
+                        tb += br;
+                    }
+                }
+
+                decimal brightness = tb / (bmp.Width * bmp.Height);
+
+                Symbol s = new Symbol(brightness, asciiCharacter, bmp);
+                symbolList.Add(s);
+            }
+            
+            symbolList = BubbleSort.Sort(symbolList);
+            
+            decimal previousValue = -1;
+            for (int i = 0; i < symbolList.Count; i++)
+            {
+                if (Math.Abs(symbolList[i].Brightness - previousValue) <= .0001m)
+                {
+                    symbolList.RemoveAt(i);
+                    i--;
+                }
+                else
+                {
+                    previousValue = symbolList[i].Brightness;
+                }
+            }
+
+            foreach (Symbol symbol in symbolList)
+            {
+                listBox1.Items.Add(symbol.Character + " " + symbol.Brightness);
+            }
         }
 
         private VideoFileReader GetReader()
@@ -164,8 +161,11 @@ namespace movietoascii
                 Console.WriteLine("Einde datastroom: frame " + frameNumber + ", totale tijd: " + duration.TotalMilliseconds);
                 writer.Close();
 
-                button1.Invoke(((Action)(() => button1.Enabled = true)));
+                btGetFrames.Invoke(((Action)(() => btGetFrames.Enabled = true)));
                 btConvert.Invoke(((Action)(() => btConvert.Enabled = true)));
+                btAsciiCharacters.Invoke(((Action)(() => btAsciiCharacters.Enabled = true)));
+                txCharacters.Invoke(((Action)(() => txCharacters.Enabled = true)));
+                progressBar2.Invoke(((Action)(() => progressBar2.Value = 0)));
                 return;
             }
             
@@ -175,13 +175,14 @@ namespace movietoascii
                 {
                     // Create graphics, maybe set lower quality?
                     Graphics g = Graphics.FromImage(bmp);
+                    g.CompositingMode = CompositingMode.SourceCopy;
                     g.SmoothingMode = SmoothingMode.AntiAlias;
                     g.InterpolationMode = InterpolationMode.HighQualityBicubic;
                     g.PixelOffsetMode = PixelOffsetMode.HighQuality;
 
-                    for (int w = 1; w < bm.Width; w += 6)
+                    for (int w = 1; w < bm.Width; w += symbolSize)
                     {
-                        for (int h = 1; h < bm.Height; h += 6)
+                        for (int h = 1; h < bm.Height; h += symbolSize)
                         {
                             int result = 0;
 
@@ -215,16 +216,22 @@ namespace movietoascii
                             if (inColor == true)
                             {
                                 SolidBrush brush = new SolidBrush(bm.GetPixel(w, h));
-                                RectangleF rectf = new RectangleF(w, h, 6, 6);
-                                g.DrawString(symbolList[result].Character.ToString(), font, brush, rectf);
+                                RectangleF rectf = new RectangleF(w, h, symbolSize, symbolSize);
+                                g.DrawString(symbolList[result].Character, font, brush, rectf);
 
-                                // TODO: Faster recoloring?! DrawImage is 30x faster but changecolor is super slow.
+                                // TODO: Disable changing the values in the symbollist while thread is running.
+                                // TODO: Faster recoloring? DrawImage is faster for complexer symbols.
                                 // Image tempImage = ChangeColorOfImage(bm.GetPixel(w, h), symbolList[result].Image);
                                 // g.DrawImage(tempImage, new PointF(w, h));
                             }
                             else
                             {
-                                g.DrawImage(symbolList[result].Image, new PointF(w, h));
+                                RectangleF rectf = new RectangleF(w, h, symbolSize, symbolSize);
+                                g.DrawString(symbolList[result].Character, font, Brushes.Green, rectf);
+
+                                // TODO: Need to fix lower quality resolutions
+                                // For reference, see http://puu.sh/nei71/3477430c3c.png (strings) vs http://puu.sh/nei7R/4d6c1cb263.png (cached image of string)
+                                // g.DrawImage(symbolList[result].Image, w, h);
                             }
                         }
                     }
@@ -232,9 +239,10 @@ namespace movietoascii
                     g.Dispose();
 
                     // Save frame.
+                    // TODO: Option to save frames or video or both.
+                    // TODO: Option to pick where to save and load.
                     bmp.Save("new/" + string.Format("{0:0000}", frameNumber) + ".bmp", System.Drawing.Imaging.ImageFormat.Bmp);
-                    // TODO: Split video up in fragments
-                    writer.WriteVideoFrame(bmp);// Errors when using a non full hd bmp
+                    writer.WriteVideoFrame(bmp);
                     Console.WriteLine(frameNumber);
                 }
             }
@@ -269,7 +277,23 @@ namespace movietoascii
                 }
             }
 
-            return (Image) bmp;
+            return (Image) bmp;            
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            listBox1.Items.Clear();
+            txCharacters.Text = "";
+            for (int i = 0; i < 255; i++)
+            {
+                txCharacters.Text += " " + (char)i;
+            }
+            scanCharacters();
+        }
+
+        private void btUpdateCharacters_Click(object sender, EventArgs e)
+        {
+            scanCharacters();
         }
     }
 }
