@@ -115,6 +115,7 @@
 			this.chInColor.TabIndex = 8;
 			this.chInColor.Text = "Ik wil kleur";
 			this.chInColor.UseVisualStyleBackColor = true;
+			this.chInColor.CheckedChanged += new System.EventHandler(this.chInColor_CheckedChanged);
 			// 
 			// progressBar2
 			// 

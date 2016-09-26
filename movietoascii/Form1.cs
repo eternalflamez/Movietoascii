@@ -20,12 +20,12 @@ namespace movietoascii
         Font font;
         VideoFileWriter writer = new VideoFileWriter();
         int frameNumber;
-        bool inColor = false;
+        bool inColor = true;
         DateTime start;
         int frameCount = 0;
         Thread convertThread;
         int symbolSize = 6;
-		bool hq = false;
+		bool hq = true;
 
 		Bitmap bmp;
 
@@ -77,16 +77,7 @@ namespace movietoascii
             btAsciiCharacters.Enabled = false;
             txCharacters.Enabled = false;
 			btAsciiCharacters.Enabled = false;
-
-            if (chInColor.Checked == true)
-            {
-                inColor = true;
-            }
-            else
-            {
-                inColor = false;
-            }
-
+			
             // Save time to compare for speed.
             start = DateTime.Now;
             frameCount = Directory.GetFiles("Frames\\").Length - 2;
@@ -233,7 +224,7 @@ namespace movietoascii
                             }
                         }
                             
-                        if (inColor == true)
+                        if (inColor)
                         {
 							if (hq)
 							{
@@ -271,7 +262,6 @@ namespace movietoascii
                 bmp.Save("new/" + string.Format("{0:0000}", frameNumber) + ".bmp", System.Drawing.Imaging.ImageFormat.Bmp);
 				writer.WriteVideoFrame(bmp);
 				ShowImage(bmp);
-				//
 				Console.WriteLine(frameNumber);
                 
             }
@@ -341,6 +331,11 @@ namespace movietoascii
 		private void cbHQ_Checked_Changed(object sender, EventArgs e)
 		{
 			hq = ((CheckBox)sender).Checked;
+		}
+
+		private void chInColor_CheckedChanged(object sender, EventArgs e)
+		{
+			inColor = ((CheckBox)sender).Checked;
 		}
 	}
 }
