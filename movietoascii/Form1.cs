@@ -256,7 +256,7 @@ namespace movietoascii
                 // TODO: Option to pick where to save and load.
                 bmp.Save("new/" + string.Format("{0:0000}", frameNumber) + ".bmp", System.Drawing.Imaging.ImageFormat.Bmp);
 				ShowImage(bmp);
-				// writer.WriteVideoFrame(bmp);
+				writer.WriteVideoFrame(bmp);
 				Console.WriteLine(frameNumber);
                 
             }
