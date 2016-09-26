@@ -25,6 +25,9 @@ namespace movietoascii
         int frameCount = 0;
         Thread convertThread;
         int symbolSize = 6;
+		bool hq = false;
+
+		Bitmap bmp;
 
         public ASCIIConverter()
         {
@@ -56,6 +59,8 @@ namespace movietoascii
 
             btGetFrames.Enabled = true;
             btConvert.Enabled = true;
+
+			progressBar1.Value = 0;
         }
 
 
@@ -67,6 +72,7 @@ namespace movietoascii
             btConvert.Enabled = false;
             btAsciiCharacters.Enabled = false;
             txCharacters.Enabled = false;
+			btAsciiCharacters.Enabled = false;
 
             if (chInColor.Checked == true)
             {
@@ -171,84 +177,90 @@ namespace movietoascii
             
             using (Bitmap bm = new Bitmap("Frames/" + frameNumber + ".bmp"))
             {
-                using (Bitmap bmp = new Bitmap(bm.Width, bm.Height))
+				Bitmap bmp = new Bitmap(bm.Width, bm.Height);
+                
+                // Create graphics, maybe set lower quality?
+                Graphics g = Graphics.FromImage(bmp);
+                g.CompositingMode = CompositingMode.SourceCopy;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+
+                for (int w = 1; w < bm.Width; w += symbolSize)
                 {
-                    // Create graphics, maybe set lower quality?
-                    Graphics g = Graphics.FromImage(bmp);
-                    g.CompositingMode = CompositingMode.SourceCopy;
-                    g.SmoothingMode = SmoothingMode.AntiAlias;
-                    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-
-                    for (int w = 1; w < bm.Width; w += symbolSize)
+                    for (int h = 1; h < bm.Height; h += symbolSize)
                     {
-                        for (int h = 1; h < bm.Height; h += symbolSize)
+                        int result = 0;
+
+                        // Get brightness and color for generating to ASCII
+
+                        decimal fb = (decimal)bm.GetPixel(w, h).GetBrightness();
+                            
+                        decimal distance = decimal.MaxValue;
+                        decimal previousDistance = distance;
+
+                        // Determine which character to use
+                        for (int b = 0; b < symbolList.Count; b++)
                         {
-                            int result = 0;
+                            decimal currentDistance = Math.Abs(symbolList[b].Brightness - fb);
 
-                            // Get brightness and color for generating to ASCII
-
-                            decimal fb = (decimal)bm.GetPixel(w, h).GetBrightness();
-                            
-                            decimal distance = decimal.MaxValue;
-                            decimal previousDistance = distance;
-
-                            // Determine which character to use
-                            for (int b = 0; b < symbolList.Count; b++)
+                            if (currentDistance > previousDistance)
                             {
-                                decimal currentDistance = Math.Abs(symbolList[b].Brightness - fb);
-
-                                if (currentDistance > previousDistance)
-                                {
-                                    // Because the list is sorted, moving away from our point would mean all upcoming values will fail the search anyway.
-                                    break;
-                                }
-
-                                previousDistance = currentDistance;
-
-                                if (currentDistance < distance)
-                                {
-                                    distance = currentDistance;
-                                    result = b;
-                                }
+                                // Because the list is sorted, moving away from our point would mean all upcoming values will fail the search anyway.
+                                break;
                             }
-                            
-                            if (inColor == true)
-                            {
-                                SolidBrush brush = new SolidBrush(bm.GetPixel(w, h));
-                                RectangleF rectf = new RectangleF(w, h, symbolSize, symbolSize);
-                                g.DrawString(symbolList[result].Character, font, brush, rectf);
 
-                                // TODO: Disable changing the values in the symbollist while thread is running.
-                                // TODO: Faster recoloring? DrawImage is faster for complexer symbols.
-                                // Image tempImage = ChangeColorOfImage(bm.GetPixel(w, h), symbolList[result].Image);
-                                // g.DrawImage(tempImage, new PointF(w, h));
-                            }
-                            else
-                            {
-                                // RectangleF rectf = new RectangleF(w, h, symbolSize, symbolSize);
-                                // g.DrawString(symbolList[result].Character, font, Brushes.Green, rectf);
+                            previousDistance = currentDistance;
 
-                                // TODO: Need to fix lower quality images
-                                // For reference, see http://puu.sh/nei71/3477430c3c.png (strings) vs http://puu.sh/nei7R/4d6c1cb263.png (cached image of string)
-                                g.DrawImage(symbolList[result].Image, w, h);
+                            if (currentDistance < distance)
+                            {
+                                distance = currentDistance;
+                                result = b;
                             }
                         }
+                            
+                        if (inColor == true)
+                        {
+							if (hq)
+							{
+								SolidBrush brush = new SolidBrush(bm.GetPixel(w, h));
+								RectangleF rectf = new RectangleF(w, h, symbolSize, symbolSize);
+								g.DrawString(symbolList[result].Character, font, brush, rectf);
+							}
+							else
+							{
+								Image tempImage = ChangeColorOfImage(bm.GetPixel(w, h), symbolList[result].Image);
+								g.DrawImage(tempImage, new PointF(w, h));
+							}
+                        }
+                        else
+                        {
+							if (hq)
+							{
+								RectangleF rectf = new RectangleF(w, h, symbolSize, symbolSize);
+								g.DrawString(symbolList[result].Character, font, Brushes.Green, rectf);
+							}
+							else
+							{
+								g.DrawImage(symbolList[result].Image, w, h);
+							}
+							
+                        }
                     }
-
-                    g.Dispose();
-
-                    // Save frame.
-                    // TODO: Option to save frames or video or both.
-                    // TODO: Option to pick where to save and load.
-                    bmp.Save("new/" + string.Format("{0:0000}", frameNumber) + ".bmp", System.Drawing.Imaging.ImageFormat.Bmp);
-                    writer.WriteVideoFrame(bmp);
-                    Console.WriteLine(frameNumber);
                 }
-            }
 
-            frameNumber++;
-            progressBar2.Invoke(((Action)(() => progressBar2.Value = (int)(((float)frameNumber / (float)frameCount) * 100))));
+                g.Dispose();
+
+                // Save frame.
+                // TODO: Option to save frames or video or both.
+                // TODO: Option to pick where to save and load.
+                bmp.Save("new/" + string.Format("{0:0000}", frameNumber) + ".bmp", System.Drawing.Imaging.ImageFormat.Bmp);
+				ShowImage(bmp);
+				// writer.WriteVideoFrame(bmp);
+				Console.WriteLine(frameNumber);
+                
+            }
+            progressBar2.Invoke(((Action)(() => progressBar2.Value = (int)(((float)frameNumber++ / (float)frameCount) * 100))));
             
             Convert();
         }
@@ -277,14 +289,29 @@ namespace movietoascii
                 }
             }
 
-            return (Image) bmp;            
+            return bmp;            
         }
 
-        private void button2_Click(object sender, EventArgs e)
+		private void ShowImage(Image image) 
+		{
+			if (this.InvokeRequired)
+			{
+				// no, so call this method again but this
+				// time use the UI thread!
+				// the heavy-lifting for switching to the ui-thread
+				// is done for you
+				this.Invoke(new MethodInvoker(delegate { ShowImage(image); }));
+			}
+			// we are now for sure on the UI thread
+			// so update the image
+			this.pictureBox1.Image = image;
+		}
+
+        private void SetAsciiCharacters(object sender, EventArgs e)
         {
             listBox1.Items.Clear();
             txCharacters.Text = "";
-            for (int i = 0; i < 255; i++)
+            for (int i = 31; i < 255; i++)
             {
                 txCharacters.Text += " " + (char)i;
             }
@@ -295,5 +322,10 @@ namespace movietoascii
         {
             scanCharacters();
         }
-    }
+
+		private void cbHQ_Checked_Changed(object sender, EventArgs e)
+		{
+			hq = ((CheckBox)sender).Checked;
+		}
+	}
 }
