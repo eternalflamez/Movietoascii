@@ -47,6 +47,10 @@ namespace movietoascii
             progressBar1.Value = 0;
 
             VideoFileReader reader = GetReader();
+			if(reader == null) {
+				return;
+			}
+
             for (int i = 0; i < reader.FrameCount; i++)
             {
                 Bitmap videoFrame = reader.ReadVideoFrame();
@@ -152,9 +156,19 @@ namespace movietoascii
         private VideoFileReader GetReader()
         {
             VideoFileReader reader = new VideoFileReader();
-            // open video file
-            reader.Open("movie.mp4");
-            return reader;
+			// open video file
+			string path;
+			OpenFileDialog file = new OpenFileDialog();
+			file.Filter = "Video Files (.mp4)|*.mp4";
+			if (file.ShowDialog() == DialogResult.OK)
+			{
+				path = file.FileName;
+
+				reader.Open(path);
+				return reader;
+			}
+
+			return null;
         }
 
         private void Convert()
@@ -255,8 +269,9 @@ namespace movietoascii
                 // TODO: Option to save frames or video or both.
                 // TODO: Option to pick where to save and load.
                 bmp.Save("new/" + string.Format("{0:0000}", frameNumber) + ".bmp", System.Drawing.Imaging.ImageFormat.Bmp);
-				ShowImage(bmp);
 				writer.WriteVideoFrame(bmp);
+				ShowImage(bmp);
+				//
 				Console.WriteLine(frameNumber);
                 
             }
