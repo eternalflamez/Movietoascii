@@ -41,9 +41,6 @@ namespace movietoascii
 
         private void button1_Click(object sender, EventArgs e)
         {
-            btGetFrames.Enabled = false;
-            btConvert.Enabled = false;
-            
             progressBar1.Value = 0;
 
             VideoFileReader reader = GetReader();
@@ -51,7 +48,10 @@ namespace movietoascii
 				return;
 			}
 
-            for (int i = 0; i < reader.FrameCount; i++)
+			btGetFrames.Enabled = false;
+			btConvert.Enabled = false;
+
+			for (int i = 0; i < reader.FrameCount; i++)
             {
                 Bitmap videoFrame = reader.ReadVideoFrame();
                 videoFrame.Save("Frames/" + i + ".bmp");
